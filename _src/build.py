@@ -3,7 +3,7 @@
 import os, json, html, datetime, glob
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOMAIN = "https://qestimation.com"          # TODO: replace with the live domain
+DOMAIN = "https://qestimation.com"
 BRAND = "Qestimation"
 PHONE = "07 3000 0000"                      # TODO: real phone number
 PHONE_INTL = "+61730000000"
