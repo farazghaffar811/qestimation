@@ -1,0 +1,29 @@
+# Qestimation
+
+> Qestimation is an Australian construction estimating company. We prepare quantity takeoffs, bid estimates, budget estimates and on-site cost controls for developers, general contractors, subcontractors and architects. Accuracy is typically within 1% of final construction cost. Free quotes are returned within 24 hours.
+
+## Key facts
+- Services: cost estimation, material/quantity takeoff, budget estimating, cost controls
+- Trades covered: site work, concrete, masonry, metals, lumber/framing, drywall, flooring, painting, exterior finishes, plumbing, electrical
+- Deliverables: executive takeoff summary, colour-coded marked plans, 3D cut/fill grading models, priced Excel estimate
+- Turnaround: quote in 24 h; most takeoffs in 2–5 business days
+- Location: Brisbane, QLD, Australia (serving all of Australia)
+- Contact: 07 3000 0000 · estimates@qestimation.com
+- Refunds: no refunds, exchanges/revisions only; no card details are ever collected
+
+## Pages
+- [Home](https://qestimation.com/): overview, services, statistics, testimonials, FAQ
+- [Services](https://qestimation.com/services.html): quantity takeoff & pricing, cost & budget estimating, cost controls
+- [Work Samples](https://qestimation.com/work-samples.html): downloadable PDF estimate samples by trade
+- [Refund Policy](https://qestimation.com/refund-policy.html): refund policy, payment options, service disclaimer
+- [Sydney Build](https://qestimation.com/sydney-build.html): photo gallery from Sydney Build Expo
+- [Contact / Get Quote](https://qestimation.com/get-quote.html): quote form, phone, email, map
+
+## FAQ
+- **What is a construction cost estimate?** A construction cost estimate is a detailed forecast of what a building project will cost, covering materials, labour, equipment, overheads and contingencies. Qestimation prepares conceptual, bid and budget estimates so developers and contractors know the real number before committing.
+- **How accurate are Qestimation estimates?** Our estimates are typically within 1% of final construction costs. We price every item from current supplier and subcontractor rates for the project’s location and cross-check quantities with colour-coded marked plans.
+- **How fast can I get a quote or estimate?** A free quote is usually returned within 24 hours of receiving your drawings. Most trade takeoffs are delivered in 2–5 business days depending on project size, and rush turnaround is available.
+- **Which file formats can I send?** We accept PDF, DWG, DXF, Revit/BIM exports, scanned plans and photos. Upload them through the quote form or email them to our estimating team.
+- **Who uses Qestimation?** Developers, general contractors, subcontractors, architects, quantity surveyors and owner-builders across Australia use Qestimation for quantity takeoffs, bid estimates, budget estimates and on-site cost control.
+- **What trades do you estimate?** Site work, concrete, masonry, structural and miscellaneous metals, lumber and framing, drywall, flooring, painting, exterior finishes, plumbing, electrical, HVAC and more. See our work samples for real examples.
+- **Do you offer refunds?** We do not issue refunds; instead we offer exchanges and revisions until the deliverable meets the agreed scope. Full details are on our Refund Policy page.
