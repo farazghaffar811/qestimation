@@ -1,6 +1,8 @@
 # Generates the static Qestimation site (HTML pages + SEO files) into the parent folder.
 # Run:  python -I _src/build.py   (from the qestimation folder)
-import os, json, html, datetime, glob
+import os, json, html, datetime, glob, re, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from content import CITIES, ARTICLES
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOMAIN = "https://qestimation.com"
@@ -10,6 +12,8 @@ PHONE_INTL = "+61730000000"
 EMAIL = "estimates@qestimation.com"         # TODO: real email
 ADDRESS = {"street": "Level 1, 123 Example Street", "city": "Brisbane", "region": "QLD", "postal": "4000", "country": "AU"}
 FORM_ENDPOINT = ""                          # e.g. https://formspree.io/f/xxxx — empty = mailto fallback
+GSC_VERIFICATION = ""                       # Google Search Console HTML-tag token (content="...")
+BING_VERIFICATION = ""                      # Bing Webmaster msvalidate.01 token
 TODAY = datetime.date.today().isoformat()
 VER = datetime.datetime.now().strftime("%Y%m%d%H%M")
 SAME_AS = ["https://www.facebook.com/qestimation", "https://www.linkedin.com/company/qestimation", "https://www.instagram.com/qestimation"]
@@ -18,10 +22,16 @@ PAGES = [
     ("index.html", "Home", "/"),
     ("services.html", "Services", "/services.html"),
     ("work-samples.html", "Work Samples", "/work-samples.html"),
-    ("refund-policy.html", "Refund Policy", "/refund-policy.html"),
+    ("blog.html", "Blog", "/blog.html"),
     ("sydney-build.html", "Sydney Build", "/sydney-build.html"),
+    ("refund-policy.html", "Refund Policy", "/refund-policy.html"),
     ("get-quote.html", "Contact Us", "/get-quote.html"),
 ]
+NAV = ["index.html", "services.html", "work-samples.html", "blog.html", "sydney-build.html"]
+EXTRA_PAGES = [("privacy-policy.html", "Privacy Policy", "/privacy-policy.html"), ("terms.html", "Terms of Service", "/terms.html")]
+def city_file(c): return f"construction-estimating-{c['slug']}.html"
+def post_file(a): return f"blog-{a['slug']}.html"
+ALL_URLS = [u for _, _, u in PAGES] + [u for _, _, u in EXTRA_PAGES] + ["/" + city_file(c) for c in CITIES] + ["/" + post_file(a) for a in ARTICLES]
 
 def e(s): return html.escape(s, quote=True)
 
@@ -40,7 +50,7 @@ ORG = {
     "email": EMAIL,
     "priceRange": "$$",
     "address": {"@type": "PostalAddress", "streetAddress": ADDRESS["street"], "addressLocality": ADDRESS["city"], "addressRegion": ADDRESS["region"], "postalCode": ADDRESS["postal"], "addressCountry": ADDRESS["country"]},
-    "areaServed": [{"@type": "Country", "name": "Australia"}, {"@type": "City", "name": "Brisbane"}, {"@type": "City", "name": "Sydney"}, {"@type": "City", "name": "Melbourne"}, {"@type": "City", "name": "Gold Coast"}],
+    "areaServed": [{"@type": "Country", "name": "Australia"}, {"@type": "City", "name": "Brisbane"}, {"@type": "City", "name": "Sydney"}, {"@type": "City", "name": "Melbourne"}, {"@type": "City", "name": "Gold Coast"}, {"@type": "City", "name": "Perth"}],
     "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "08:00", "closes": "18:00"}],
     "sameAs": SAME_AS,
     "knowsAbout": ["construction cost estimating", "quantity takeoff", "material takeoff", "bid estimating", "budget estimating", "cost control", "pre-construction services"],
@@ -56,8 +66,9 @@ WEBSITE = {"@type": "WebSite", "@id": DOMAIN + "/#website", "url": DOMAIN + "/",
 def breadcrumbs(items):
     return {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": n, "item": DOMAIN + u} for i, (n, u) in enumerate(items)]}
 
-def head(title, desc, path, extra_ld=None, og_type="website", keywords=""):
+def head(title, desc, path, extra_ld=None, og_type="website", keywords="", extra_head=""):
     url = DOMAIN + path
+    verify = (f'<meta name="google-site-verification" content="{GSC_VERIFICATION}">\n' if GSC_VERIFICATION else "") + (f'<meta name="msvalidate.01" content="{BING_VERIFICATION}">\n' if BING_VERIFICATION else "")
     graph = [ORG, WEBSITE] + (extra_ld or [])
     return f"""<!DOCTYPE html>
 <html lang="en-AU">
@@ -72,7 +83,7 @@ def head(title, desc, path, extra_ld=None, og_type="website", keywords=""):
 <link rel="alternate" hreflang="x-default" href="{url}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="author" content="{BRAND}">
-<meta name="geo.region" content="AU-{ADDRESS['region']}">
+{verify}{extra_head}<meta name="geo.region" content="AU-{ADDRESS['region']}">
 <meta name="geo.placename" content="{ADDRESS['city']}">
 <meta name="theme-color" content="#1c2646">
 <meta property="og:locale" content="en_AU">
@@ -106,7 +117,8 @@ def head(title, desc, path, extra_ld=None, og_type="website", keywords=""):
 
 def header(active):
     ACT = ' class="active" aria-current="page"'
-    links = "".join(f'<a href="{f}"{ACT if f == active else ""}>{e(n)}</a>' for f, n, _ in PAGES if f != "get-quote.html")
+    names = dict((f, n) for f, n, _ in PAGES)
+    links = "".join(f'<a href="{f}"{ACT if f == active else ""}>{e(names[f])}</a>' for f in NAV)
     return f"""<div class="topbar"><div class="container">
   <a href="tel:{PHONE_INTL}"><i class="fa-solid fa-phone"></i> {PHONE}</a><span class="sep">|</span>
   <a href="mailto:{EMAIL}"><i class="fa-solid fa-envelope"></i> {EMAIL}</a>
@@ -153,6 +165,7 @@ def partners_block(title="Trusted Partners"):
 
 def footer():
     links = "".join(f'<li><i class="fa-solid fa-angle-right"></i><a href="{f}">{e(n)}</a></li>' for f, n, _ in PAGES)
+    areas = "".join(f'<a href="{city_file(c)}">Construction estimating {e(c["name"])}</a>' for c in CITIES)
     return f"""</main>
 <footer class="footer">
   <div class="container footer__top">
@@ -172,6 +185,7 @@ def footer():
       <li><i class="fa-solid fa-angle-right"></i><a href="services.html#cost-controls">Cost Controls</a></li>
       <li><i class="fa-solid fa-angle-right"></i><a href="services.html#budget-estimating">Budget Estimating</a></li>
       <li><i class="fa-solid fa-angle-right"></i><a href="work-samples.html">Trade Estimate Samples</a></li>
+      <li><i class="fa-solid fa-angle-right"></i><a href="blog.html">Estimating Insights (Blog)</a></li>
     </ul></div>
     <div data-reveal="up" data-delay="300"><h4>Contact</h4><ul>
       <li><i class="fa-solid fa-location-dot"></i><span>{e(ADDRESS['street'])}, {e(ADDRESS['city'])} {ADDRESS['region']} {ADDRESS['postal']}, Australia</span></li>
@@ -180,8 +194,9 @@ def footer():
       <li><i class="fa-regular fa-clock"></i><span>Mon – Fri, 8:00am – 6:00pm AEST</span></li>
     </ul></div>
   </div>
+  <div class="footer__areas"><div class="container"><strong>Service areas</strong>{areas}</div></div>
   <div class="footer__bottom"><div class="container">
-    Copyright © 2015–<span class="year">{datetime.date.today().year}</span> <a href="index.html">{BRAND}</a> | All Rights Reserved | <a href="refund-policy.html">Refund Policy</a> | <a href="refund-policy.html#disclaimer">Service Disclaimer</a>
+    Copyright © 2015–<span class="year">{datetime.date.today().year}</span> <a href="index.html">{BRAND}</a> | All Rights Reserved | <a href="refund-policy.html">Refund Policy</a> | <a href="privacy-policy.html">Privacy</a> | <a href="terms.html">Terms</a>
   </div></div>
 </footer>
 <a href="#" class="to-top" aria-label="Back to top"><i class="fa-solid fa-chevron-up"></i></a>
@@ -252,8 +267,8 @@ FAQ = [
 
 # ---------------------------------------------------------------- HOME
 def build_home():
-    title = "Qestimation | Construction Estimating Services Australia – Cost Estimates & Quantity Takeoffs"
-    desc = "Qestimation delivers accurate construction cost estimates, material & quantity takeoffs, budget estimates and cost control for developers, contractors, subcontractors and architects. Free quote within 24 hours."
+    title = "Construction Estimating Services Australia | Qestimation"
+    desc = "Accurate construction cost estimates, quantity takeoffs and budget estimates for builders, subcontractors and developers across Australia. Free quote in 24 hours."
     ld = [
         {"@type": "WebPage", "@id": DOMAIN + "/#webpage", "url": DOMAIN + "/", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "about": {"@id": DOMAIN + "/#organization"}, "inLanguage": "en-AU", "dateModified": TODAY,
          "speakable": {"@type": "SpeakableSpecification", "cssSelector": ["#hero-h", "#intro-p", ".fact"]}},
@@ -351,6 +366,19 @@ def build_home():
     </div>
   </div>
 </section>
+<section class="section" aria-labelledby="areas-h">
+  <div class="container">
+    <div class="section-title" data-reveal="up"><h2 id="areas-h">Construction Estimating Services Across Australia</h2><p>Local pricing, local knowledge. We estimate projects in every state and territory, with dedicated market pricing for these regions.</p></div>
+    <div class="city-grid">{city_cards()}</div>
+  </div>
+</section>
+<section class="section section--light" aria-labelledby="posts-h">
+  <div class="container">
+    <div class="section-title" data-reveal="up"><h2 id="posts-h">Estimating Insights</h2><p>Practical guides on takeoffs, tendering and construction cost control from the {BRAND} team.</p></div>
+    <div class="post-grid">{post_cards(ARTICLES[:3])}</div>
+    <p class="text-center" style="margin-top:34px" data-reveal="up"><a href="blog.html" class="btn btn-navy">Read all articles</a></p>
+  </div>
+</section>
 <section class="section" aria-labelledby="faq-h">
   <div class="container">
     <div class="section-title" data-reveal="up"><h2 id="faq-h">Frequently Asked Questions</h2><p>Straight answers about construction estimating, turnaround and how we work.</p></div>
@@ -359,12 +387,12 @@ def build_home():
 </section>
 {cta_block()}
 """
-    return head(title, desc, "/", ld, keywords="construction estimating services, construction cost estimator, quantity takeoff services, material takeoff, bid estimating, budget estimate, cost control, construction estimating Australia, Brisbane estimator") + header("index.html") + body + footer()
+    return head(title, desc, "/", ld, extra_head='<link rel="preload" as="image" href="assets/img/bg-slide1-2.webp">\n', keywords="construction estimating services, construction cost estimator, quantity takeoff services, material takeoff, bid estimating, budget estimate, cost control, construction estimating Australia, Brisbane estimator") + header("index.html") + body + footer()
 
 # ---------------------------------------------------------------- SERVICES
 def build_services():
-    title = "Construction Estimating Services | Quantity Takeoff, Cost & Budget Estimating – Qestimation"
-    desc = "Qestimation's construction estimating services: quantity takeoff & pricing, cost & budget estimating, bid estimates and on-site cost control. Accuracy typically within 1% of final construction cost."
+    title = "Estimating Services: Takeoffs, Cost & Budget Estimates | Qestimation"
+    desc = "Quantity takeoff and pricing, cost and budget estimating, bid estimates and on-site cost control. Accuracy typically within 1% of final construction cost."
     ld = [{"@type": "WebPage", "url": DOMAIN + "/services.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY},
           breadcrumbs([("Home", "/"), ("Services", "/services.html")])]
     for sid, name, d in [("quantity-takeoff", "Quantity Takeoff & Pricing", "Detailed material quantity takeoffs with current local pricing for every construction trade."),
@@ -449,8 +477,8 @@ SAMPLES = [
     ("electrical", "fa-solid fa-bolt", "Electric Work Estimates", "Electric-Work-Estimates-Sample.pdf", "Lighting, power, switchboards, cabling and containment counts."),
 ]
 def build_work():
-    title = "Construction Estimate Work Samples | Concrete, Masonry, Electrical & More – Qestimation"
-    desc = "Download real Qestimation estimate samples: site work, concrete, masonry, metal, lumber, drywall, flooring, painting, exterior finishes, plumbing and electrical takeoffs."
+    title = "Construction Estimate Samples by Trade | Qestimation"
+    desc = "Download sample estimates: site work, concrete, masonry, metal, lumber, drywall, flooring, painting, exterior finishes, plumbing and electrical takeoffs."
     ld = [{"@type": "CollectionPage", "url": DOMAIN + "/work-samples.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY,
            "hasPart": [{"@type": "DigitalDocument", "name": n + " Sample", "url": DOMAIN + "/assets/samples/" + f, "encodingFormat": "application/pdf", "description": d} for _, _, n, f, d in SAMPLES]},
           breadcrumbs([("Home", "/"), ("Work Samples", "/work-samples.html")])]
@@ -472,8 +500,8 @@ def build_work():
 
 # ---------------------------------------------------------------- REFUND POLICY
 def build_refund():
-    title = "Refund Policy & Service Disclaimer – Qestimation"
-    desc = "Qestimation refund policy: we do not issue refunds, we offer exchanges and revisions. We never collect card details – invoices are paid directly by the client. Accepted payment options listed."
+    title = "Refund Policy & Service Disclaimer | Qestimation"
+    desc = "Qestimation offers exchanges and revisions rather than refunds, never collects card details, and accepts Visa, Mastercard, Amex, Square and bank transfer."
     ld = [{"@type": "WebPage", "url": DOMAIN + "/refund-policy.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY},
           breadcrumbs([("Home", "/"), ("Refund Policy", "/refund-policy.html")])]
     pays = "".join(f'<img src="assets/img/{f}" alt="{e(n)} accepted" loading="lazy" width="200" height="130">' for f, n in [("square-up.jpg", "Square payments"), ("amex.jpg", "American Express"), ("master-card.png", "Mastercard"), ("visa.png", "Visa"), ("all_local_bank_transfers.jpg", "Local bank transfer")])
@@ -495,7 +523,7 @@ def build_refund():
 # ---------------------------------------------------------------- SYDNEY BUILD
 def build_sydney():
     files = sorted(glob.glob(os.path.join(ROOT, "assets", "gallery", "*.jpeg")), key=lambda p: int(os.path.basename(p).split(".")[0]))
-    title = "Sydney Build Expo Gallery – Qestimation at Australia’s Largest Construction Show"
+    title = "Sydney Build Expo Gallery | Qestimation"
     desc = f"Photos from the Qestimation team at Sydney Build Expo, Australia's largest construction and design show. {len(files)} images from the stand, seminars and networking."
     ld = [{"@type": "ImageGallery", "url": DOMAIN + "/sydney-build.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY,
            "image": [DOMAIN + "/assets/gallery/" + os.path.basename(f) for f in files[:20]]},
@@ -514,7 +542,7 @@ def build_sydney():
 
 # ---------------------------------------------------------------- CONTACT
 def build_quote():
-    title = "Get a Free Construction Estimate Quote | Contact Qestimation"
+    title = "Get a Free Estimate Quote | Contact Qestimation"
     desc = "Upload your blueprints and get a free quotation from Qestimation's experienced estimators within 24 hours. Call, email or use the online form."
     ld = [{"@type": "ContactPage", "url": DOMAIN + "/get-quote.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY, "mainEntity": {"@id": DOMAIN + "/#organization"}},
           breadcrumbs([("Home", "/"), ("Contact Us", "/get-quote.html")])]
@@ -550,9 +578,210 @@ def build_quote():
 """
     return head(title, desc, "/get-quote.html", ld, keywords="free construction estimate quote, construction estimator contact, upload blueprints for estimate") + header("get-quote.html") + body + footer()
 
+# ---------------------------------------------------------------- SHARED CARDS
+POST_IMGS = ["Color-Coded-Plans.jpg", "cost-estimation.jpg", "Summary-Tab.jpg", "qunatity-offs-1.jpg", "sample-1.jpg", "Existing-Conditions.jpg"]
+def post_img(a): return POST_IMGS[ARTICLES.index(a) % len(POST_IMGS)]
+def nice_date(d): return datetime.date.fromisoformat(d).strftime("%d %B %Y").lstrip("0")
+def words(a):
+    n = 0
+    for _, items in a["sections"]:
+        for it in items:
+            n += sum(len(x.split()) for x in it) if isinstance(it, list) else len(it.split())
+    return n
+
+def post_cards(arts):
+    return "".join(f"""<article class="post-card" data-reveal="up" data-delay="{i*120}">
+      <a class="post-card__img" href="{post_file(a)}"><img src="assets/img/{post_img(a)}" alt="{e(a['title'])}" loading="lazy" width="800" height="450"></a>
+      <div class="post-card__body"><span class="post-card__meta">{nice_date(a['date'])} · {max(2, words(a)//200)} min read</span>
+      <h3><a href="{post_file(a)}">{e(a['title'])}</a></h3><p>{e(a['summary'])}</p>
+      <a class="link" href="{post_file(a)}">Read article <i class="fa-solid fa-arrow-right-long"></i></a></div>
+    </article>""" for i, a in enumerate(arts))
+
+def city_cards():
+    return "".join(f'<a class="city-card" href="{city_file(c)}" data-reveal="up" data-delay="{i*100}"><i class="fa-solid fa-location-dot"></i><strong>{e(c["name"])}</strong><span>{e(c["state"])} · estimating services</span></a>' for i, c in enumerate(CITIES))
+
+# ---------------------------------------------------------------- CITY PAGES
+def build_city(c):
+    n, st = c["name"], c["state"]
+    path = "/" + city_file(c)
+    title = f"Construction Estimating {n} | Takeoffs & Estimates | {BRAND}"
+    desc = f"Construction estimating in {n}, {st}: quantity takeoffs, bid and budget estimates priced at current {n} rates. Free quote within 24 hours."
+    faq = [
+        (f"How much does a construction estimate cost in {n}?", f"Single-trade takeoffs for {n} projects start in the low hundreds of dollars; full multi-trade priced estimates are quoted as a fixed fee after we review your drawings. Request a free quote and you will have a price within 24 hours."),
+        (f"Do you price {n} projects with local rates?", f"Yes. Every {n} estimate uses current {c['region']} supplier quotes and subcontractor rates, not national averages, so your tender reflects what the work actually costs in {st}."),
+        (f"How quickly can you turn around a {n} takeoff?", "Most trade takeoffs are delivered in 2 to 5 business days. Rush service is available for tenders closing sooner."),
+        (f"Do you need to visit the site in {n}?", "No. Estimates are prepared from your drawings, specifications and reports, so we serve all of " + c["suburbs"] + " remotely with the same turnaround."),
+    ]
+    ld = [
+        {"@type": "WebPage", "url": DOMAIN + path, "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY},
+        {"@type": "Service", "name": f"Construction Estimating Services {n}", "serviceType": "Construction estimating", "provider": {"@id": DOMAIN + "/#organization"}, "areaServed": {"@type": "City", "name": n, "containedInPlace": {"@type": "State", "name": st}}, "url": DOMAIN + path, "description": desc},
+        {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]},
+        breadcrumbs([("Home", "/"), (f"Construction Estimating {n}", path)]),
+    ]
+    faq_html = "".join(f'<details{" open" if i == 0 else ""} data-reveal="up"><summary>{e(q)}</summary><div class="answer"><p>{e(a)}</p></div></details>' for i, (q, a) in enumerate(faq))
+    others = "".join(f'<a class="city-card" href="{city_file(o)}"><i class="fa-solid fa-location-dot"></i><strong>{e(o["name"])}</strong><span>{e(o["state"])}</span></a>' for o in CITIES if o is not c)
+    body = inner_hero(f"Construction Estimating Services in {n}", f"Quantity takeoffs, bid estimates and budget estimates for {n} builders, subcontractors and developers, priced at current {st} rates.", f"Estimating {n}", "services-banner-1.jpg") + band() + f"""
+<section class="section" aria-labelledby="city-h">
+  <div class="container with-sidebar">
+    <div>
+      <h2 id="city-h" data-reveal="up" style="text-transform:none">{BRAND} in {n}</h2>
+      <p data-reveal="up">{e(c['intro'])}</p>
+      <p data-reveal="up">{e(c['market'])}</p>
+      <h3 data-reveal="up">What we estimate in {n}</h3>
+      <p data-reveal="up">Recent {n} work includes {e(c['projects'])}. Whether you are a head contractor pricing a tender, a subcontractor quoting a trade package or a developer testing feasibility, you receive the same deliverables: a trade-by-trade quantity takeoff, colour-coded marked plans, an executive summary and a priced estimate in Excel.</p>
+      <div class="two-col">
+        <div data-reveal="left">
+          <h3>Services for {n} projects</h3>
+          <ul class="check-list">
+            <li><i class="fa-solid fa-circle-check"></i><a href="services.html#quantity-takeoff">Quantity &amp; material takeoffs</a> for every trade</li>
+            <li><i class="fa-solid fa-circle-check"></i><a href="services.html#cost-estimation">Bid estimates</a> priced at {n} rates</li>
+            <li><i class="fa-solid fa-circle-check"></i><a href="services.html#budget-estimating">Budget &amp; feasibility estimates</a></li>
+            <li><i class="fa-solid fa-circle-check"></i><a href="services.html#cost-controls">Cost control</a> during construction</li>
+            <li><i class="fa-solid fa-circle-check"></i><a href="work-samples.html">Trade estimate samples</a> to review first</li>
+          </ul>
+        </div>
+        <div data-reveal="right">
+          <h3>Areas we cover</h3>
+          <p>We serve builders across {e(c['suburbs'])}, and throughout {e(c['region'])}. Because estimates are prepared from your drawings, distance never affects turnaround.</p>
+          <h3>Who we work with</h3>
+          <p>General contractors, residential builders, developers, architects, quantity surveyors, and subcontractors in concrete, masonry, carpentry, plasterboard, painting, plumbing and electrical trades.</p>
+        </div>
+      </div>
+      <h3 data-reveal="up" style="margin-top:30px">{n} estimating FAQ</h3>
+      <div class="faq">{faq_html}</div>
+    </div>
+    <div class="sidebar" data-reveal="up">{estimator()}</div>
+  </div>
+</section>
+<section class="section section--light" aria-label="Other locations">
+  <div class="container"><div class="section-title" data-reveal="up"><h2>Other Locations</h2></div><div class="city-grid" data-reveal="up">{others}</div></div>
+</section>
+""" + cta_block()
+    return head(title, desc, path, ld, keywords=f"construction estimating {n}, quantity takeoff {n}, construction cost estimator {n}, estimating services {st}") + header("") + body + footer()
+
+# ---------------------------------------------------------------- BLOG
+def build_blog_index():
+    title = f"Construction Estimating Blog & Guides | {BRAND}"
+    desc = "Plain-English guides on quantity takeoffs, bid vs budget estimates, estimating fees in Australia, concrete takeoffs and winning more tenders."
+    ld = [{"@type": "CollectionPage", "url": DOMAIN + "/blog.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY,
+           "hasPart": [{"@type": "BlogPosting", "headline": a["title"], "url": DOMAIN + "/" + post_file(a), "datePublished": a["date"]} for a in ARTICLES]},
+          breadcrumbs([("Home", "/"), ("Blog", "/blog.html")])]
+    body = inner_hero("Estimating Insights", "Practical, plain-English guides on construction estimating, quantity takeoffs and tendering from the Qestimation team.", "Blog") + f"""
+<section class="section" aria-label="Articles"><div class="container"><div class="post-grid">{post_cards(ARTICLES)}</div></div></section>
+""" + cta_block()
+    return head(title, desc, "/blog.html", ld, keywords="construction estimating blog, quantity takeoff guide, construction cost guide Australia") + header("blog.html") + body + footer()
+
+LINKS = [
+    ("quantity takeoff and pricing service", "services.html#quantity-takeoff"),
+    ("budget estimating service", "services.html#budget-estimating"),
+    ("cost estimation service", "services.html#cost-estimation"),
+    ("request a free quote", "get-quote.html"),
+    ("free quote", "get-quote.html"),
+    ("work samples page", "work-samples.html"),
+    ("work samples", "work-samples.html"),
+    ("services page", "services.html"),
+]
+def autolink(t):
+    done = set()
+    for phrase, href in LINKS:
+        if phrase in t and href not in done and not any(phrase in d for d in done):
+            t = t.replace(phrase, f'<a href="{href}">{phrase}</a>', 1)
+            done.add(href)
+    return t
+
+def render_sections(a):
+    out, toc = [], []
+    for i, (h, items) in enumerate(a["sections"]):
+        hid = f"s{i+1}"
+        toc.append(f'<a href="#{hid}">{e(h)}</a>')
+        out.append(f'<h2 id="{hid}">{e(h)}</h2>')
+        for it in items:
+            if isinstance(it, list):
+                out.append("<ul>" + "".join(f"<li>{e(x)}</li>" for x in it) + "</ul>")
+            else:
+                out.append(f"<p>{autolink(e(it))}</p>")
+    return "".join(out), "".join(toc)
+
+def build_article(a):
+    path = "/" + post_file(a)
+    title = a["title"] if len(a["title"]) > 50 else f"{a['title']} | {BRAND}"
+    body_html, toc = render_sections(a)
+    wc = words(a)
+    ld = [{"@type": "BlogPosting", "@id": DOMAIN + path + "#article", "headline": a["title"], "description": a["desc"], "url": DOMAIN + path, "mainEntityOfPage": DOMAIN + path,
+           "image": DOMAIN + "/assets/img/" + post_img(a), "datePublished": a["date"], "dateModified": TODAY, "wordCount": wc, "keywords": a["keyword"], "inLanguage": "en-AU", "articleSection": "Construction Estimating",
+           "author": {"@type": "Organization", "name": BRAND, "@id": DOMAIN + "/#organization"}, "publisher": {"@id": DOMAIN + "/#organization"},
+           "speakable": {"@type": "SpeakableSpecification", "cssSelector": [".lead", "h1"]}},
+          breadcrumbs([("Home", "/"), ("Blog", "/blog.html"), (a["title"], path)])]
+    related = [x for x in ARTICLES if x is not a][:3]
+    extra = f'<meta property="article:published_time" content="{a["date"]}T09:00:00+10:00">\n<meta property="article:modified_time" content="{TODAY}T09:00:00+10:00">\n<meta property="article:section" content="Construction Estimating">\n<meta property="article:tag" content="{e(a["keyword"])}">\n'
+    body = inner_hero(e(a["title"]), "", "Blog") + f"""
+<section class="section" aria-label="Article">
+  <div class="container">
+    <article class="article">
+      <div class="article__meta" data-reveal="up"><span><i class="fa-regular fa-calendar"></i>{nice_date(a['date'])}</span><span><i class="fa-regular fa-clock"></i>{max(2, wc//200)} min read</span><span><i class="fa-regular fa-user"></i>{BRAND} Estimating Team</span><span><i class="fa-solid fa-tag"></i>{e(a['keyword'])}</span></div>
+      <p class="lead" data-reveal="up">{e(a['summary'])}</p>
+      <nav class="toc" aria-label="Contents" data-reveal="up"><strong>In this article</strong>{toc}</nav>
+      <div data-reveal="up">{body_html}</div>
+      <div class="article__cta" data-reveal="up"><div><h3>Need this done for your project?</h3><p>Upload your drawings and get a fixed-price estimating quote within 24 hours.</p></div><a href="get-quote.html" class="btn btn-primary">Get a free quote</a></div>
+      <div class="related" style="margin-top:50px"><h3>Related articles</h3><div class="post-grid">{post_cards(related)}</div></div>
+    </article>
+  </div>
+</section>
+""" + cta_block()
+    return head(title, a["desc"], path, ld, og_type="article", keywords=a["keyword"] + ", construction estimating, " + BRAND.lower(), extra_head=extra) + header("blog.html") + body + footer()
+
+# ---------------------------------------------------------------- LEGAL
+def build_privacy():
+    title = f"Privacy Policy | {BRAND}"
+    desc = f"How {BRAND} collects, uses and protects personal information and project drawings, in line with the Australian Privacy Principles."
+    ld = [{"@type": "WebPage", "url": DOMAIN + "/privacy-policy.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY}, breadcrumbs([("Home", "/"), ("Privacy Policy", "/privacy-policy.html")])]
+    body = inner_hero("Privacy Policy", "", "Privacy Policy") + f"""
+<section class="section"><div class="container prose">
+  <p data-reveal="up">Last updated: {nice_date(TODAY)}. {BRAND} ("we", "us") is committed to protecting your privacy in accordance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles.</p>
+  <h2 data-reveal="up">Information we collect</h2>
+  <p data-reveal="up">When you request a quote or contact us we collect your name, email address, phone number, company details and the project files you upload (drawings, specifications and reports). We also collect standard web analytics data such as pages visited, browser type and approximate location.</p>
+  <h2 data-reveal="up">How we use it</h2>
+  <p data-reveal="up">We use your information to prepare quotes and estimates, communicate about your project, issue invoices, improve our website and, where you have agreed, send occasional estimating tips and industry updates. We never sell personal information.</p>
+  <h2 data-reveal="up">Project drawings and confidentiality</h2>
+  <p data-reveal="up">Drawings and tender documents you provide are treated as confidential, used only to prepare your estimate, stored on access-controlled systems and never shared with third parties other than the staff and contractors working on your project under confidentiality obligations.</p>
+  <h2 data-reveal="up">Cookies and analytics</h2>
+  <p data-reveal="up">Our site may use cookies and analytics tools to understand how visitors use it. You can disable cookies in your browser; the site will continue to work.</p>
+  <h2 data-reveal="up">Access, correction and complaints</h2>
+  <p data-reveal="up">You may request access to or correction of your personal information, or make a privacy complaint, by emailing <a href="mailto:{EMAIL}">{EMAIL}</a>. We respond within 30 days. If you are not satisfied you may contact the Office of the Australian Information Commissioner.</p>
+</div></section>
+""" + cta_block()
+    return head(title, desc, "/privacy-policy.html", ld) + header("") + body + footer()
+
+def build_terms():
+    title = f"Terms of Service | {BRAND}"
+    desc = f"Terms governing construction estimating services supplied by {BRAND}: scope, accuracy, revisions, payment, confidentiality and limitation of liability."
+    ld = [{"@type": "WebPage", "url": DOMAIN + "/terms.html", "name": title, "description": desc, "isPartOf": {"@id": DOMAIN + "/#website"}, "inLanguage": "en-AU", "dateModified": TODAY}, breadcrumbs([("Home", "/"), ("Terms of Service", "/terms.html")])]
+    state_name = {"QLD": "Queensland", "NSW": "New South Wales", "VIC": "Victoria", "WA": "Western Australia"}.get(ADDRESS["region"], ADDRESS["region"])
+    body = inner_hero("Terms of Service", "", "Terms") + f"""
+<section class="section"><div class="container prose">
+  <p data-reveal="up">Last updated: {nice_date(TODAY)}. By engaging {BRAND} you agree to the following terms.</p>
+  <h2 data-reveal="up">Scope of services</h2>
+  <p data-reveal="up">We prepare quantity takeoffs, cost estimates, budget estimates and cost control reports from the drawings, specifications and information you supply. The scope, fee and turnaround for each engagement are confirmed in writing in our quote.</p>
+  <h2 data-reveal="up">Accuracy and reliance</h2>
+  <p data-reveal="up">Estimates reflect the documents provided and market pricing at the date of issue. Quantities are measured using industry-standard methods. Final construction cost depends on factors outside our control including design changes, site conditions, procurement decisions and market movement. Estimates are a professional opinion of probable cost, not a guarantee.</p>
+  <h2 data-reveal="up">Revisions and exchanges</h2>
+  <p data-reveal="up">If a deliverable does not meet the agreed scope we will revise or re-issue it at no charge. We do not provide refunds; see our <a href="refund-policy.html">Refund Policy</a>. Changes to drawings after an estimate is issued are quoted as a revision.</p>
+  <h2 data-reveal="up">Payment</h2>
+  <p data-reveal="up">Invoices are issued on delivery unless otherwise agreed and are payable by bank transfer or card through our secure payment provider. We never collect card details directly.</p>
+  <h2 data-reveal="up">Confidentiality and intellectual property</h2>
+  <p data-reveal="up">Your documents remain your property and are kept confidential. Our estimate templates and methodology remain our property; you receive a licence to use the deliverables for the project they were prepared for.</p>
+  <h2 data-reveal="up">Limitation of liability</h2>
+  <p data-reveal="up">To the extent permitted by Australian Consumer Law, our liability for any claim arising from an estimate is limited to the fee paid for that estimate.</p>
+  <h2 data-reveal="up">Governing law</h2>
+  <p data-reveal="up">These terms are governed by the laws of {state_name}, Australia.</p>
+</div></section>
+""" + cta_block()
+    return head(title, desc, "/terms.html", ld) + header("") + body + footer()
+
 # ---------------------------------------------------------------- SEO FILES
 def build_seo_files():
-    urls = "".join(f"  <url><loc>{DOMAIN}{u}</loc><lastmod>{TODAY}</lastmod><changefreq>{'weekly' if u == '/' else 'monthly'}</changefreq><priority>{'1.0' if u == '/' else '0.8'}</priority></url>\n" for _, _, u in PAGES)
+    def prio(u): return "1.0" if u == "/" else ("0.9" if u.startswith("/services") or u.startswith("/construction-estimating-") else ("0.5" if u in ("/privacy-policy.html", "/terms.html", "/refund-policy.html") else "0.8"))
+    urls = "".join(f"  <url><loc>{DOMAIN}{u}</loc><lastmod>{TODAY}</lastmod><changefreq>{'weekly' if u in ('/', '/blog.html') else 'monthly'}</changefreq><priority>{prio(u)}</priority></url>\n" for u in ALL_URLS)
     sitemap = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
     robots = f"User-agent: *\nAllow: /\nDisallow: /_src/\n\n# AI crawlers welcome\nUser-agent: GPTBot\nAllow: /\nUser-agent: ClaudeBot\nAllow: /\nUser-agent: PerplexityBot\nAllow: /\nUser-agent: Google-Extended\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n"
     llms = f"""# {BRAND}
@@ -575,6 +804,8 @@ def build_seo_files():
 - [Refund Policy]({DOMAIN}/refund-policy.html): refund policy, payment options, service disclaimer
 - [Sydney Build]({DOMAIN}/sydney-build.html): photo gallery from Sydney Build Expo
 - [Contact / Get Quote]({DOMAIN}/get-quote.html): quote form, phone, email, map
+- [Blog]({DOMAIN}/blog.html): guides on takeoffs, estimating fees, bid vs budget estimates, tendering
+""" + "".join(f"- [Construction estimating {c['name']}]({DOMAIN}/{city_file(c)}): local estimating services page for {c['name']}, {c['state']}\n" for c in CITIES) + "".join(f"- [{a['title']}]({DOMAIN}/{post_file(a)}): {a['summary']}\n" for a in ARTICLES) + """
 
 ## FAQ
 """ + "".join(f"- **{q}** {a}\n" for q, a in FAQ)
@@ -583,8 +814,16 @@ def build_seo_files():
     return {"sitemap.xml": sitemap, "robots.txt": robots, "llms.txt": llms, "site.webmanifest": manifest}
 
 def main():
-    out = {"index.html": build_home(), "services.html": build_services(), "work-samples.html": build_work(), "refund-policy.html": build_refund(), "sydney-build.html": build_sydney(), "get-quote.html": build_quote()}
+    out = {"index.html": build_home(), "services.html": build_services(), "work-samples.html": build_work(), "refund-policy.html": build_refund(), "sydney-build.html": build_sydney(), "get-quote.html": build_quote(),
+           "blog.html": build_blog_index(), "privacy-policy.html": build_privacy(), "terms.html": build_terms()}
+    for c in CITIES: out[city_file(c)] = build_city(c)
+    for a in ARTICLES: out[post_file(a)] = build_article(a)
     out.update(build_seo_files())
+    webp = {f[:-5] for f in os.listdir(os.path.join(ROOT, "assets", "img")) if f.endswith(".webp")}
+    def swap(m): return f"assets/img/{m.group(1)}.webp" if m.group(1) in webp else m.group(0)
+    for name in list(out):
+        if name.endswith(".html"):
+            out[name] = re.sub(r"assets/img/([A-Za-z0-9_.-]+?)\.jpg", swap, out[name])
     for name, content in out.items():
         with open(os.path.join(ROOT, name), "w", encoding="utf-8") as f:
             f.write(content)

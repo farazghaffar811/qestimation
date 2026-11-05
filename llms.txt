@@ -18,6 +18,19 @@
 - [Refund Policy](https://qestimation.com/refund-policy.html): refund policy, payment options, service disclaimer
 - [Sydney Build](https://qestimation.com/sydney-build.html): photo gallery from Sydney Build Expo
 - [Contact / Get Quote](https://qestimation.com/get-quote.html): quote form, phone, email, map
+- [Blog](https://qestimation.com/blog.html): guides on takeoffs, estimating fees, bid vs budget estimates, tendering
+- [Construction estimating Brisbane](https://qestimation.com/construction-estimating-brisbane.html): local estimating services page for Brisbane, QLD
+- [Construction estimating Sydney](https://qestimation.com/construction-estimating-sydney.html): local estimating services page for Sydney, NSW
+- [Construction estimating Melbourne](https://qestimation.com/construction-estimating-melbourne.html): local estimating services page for Melbourne, VIC
+- [Construction estimating Gold Coast](https://qestimation.com/construction-estimating-gold-coast.html): local estimating services page for Gold Coast, QLD
+- [Construction estimating Perth](https://qestimation.com/construction-estimating-perth.html): local estimating services page for Perth, WA
+- [What Is a Quantity Takeoff? A Plain-English Guide for Builders](https://qestimation.com/blog-what-is-a-quantity-takeoff.html): A quantity takeoff is the measured list of materials and labour items a project needs, taken directly from the drawings. It is the foundation of every reliable construction estimate.
+- [How Much Does a Construction Estimate Cost in Australia?](https://qestimation.com/blog-construction-estimate-cost-australia.html): Outsourced construction estimates in Australia typically cost between a few hundred dollars for a single-trade takeoff and a low four-figure sum for a full commercial bid, far less than the margin lost on one mispriced tender.
+- [Bid Estimate vs Budget Estimate: Which One Does Your Project Need?](https://qestimation.com/blog-bid-estimate-vs-budget-estimate.html): A budget estimate forecasts cost from early design to test feasibility, usually within 10 to 20 percent. A bid estimate is a fully measured, priced tender figure accurate to a few percent.
+- [How to Win More Construction Tenders Without Cutting Your Margin](https://qestimation.com/blog-win-more-construction-tenders.html): Contractors win more tenders by pricing from accurate quantities, comparing subcontractors line by line, pricing risk explicitly and presenting a bid the client can trust, not by shaving margin.
+- [Concrete Takeoff Guide: Measuring Slabs, Footings and Reinforcement Correctly](https://qestimation.com/blog-concrete-takeoff-guide.html): A concrete takeoff measures concrete volume by element and grade, reinforcement by mesh sheets and bar tonnage, formwork by face area, and adds pumping, finishing and curing items that are easy to miss.
+- [Outsourcing Construction Estimating: Pros, Cons and How to Choose a Provider](https://qestimation.com/blog-outsourcing-construction-estimating.html): Outsourcing estimating gives builders fixed per-project costs, fast turnaround and specialist accuracy, at the cost of some control. Choosing a provider that shows its working closes that gap.
+
 
 ## FAQ
 - **What is a construction cost estimate?** A construction cost estimate is a detailed forecast of what a building project will cost, covering materials, labour, equipment, overheads and contingencies. Qestimation prepares conceptual, bid and budget estimates so developers and contractors know the real number before committing.
