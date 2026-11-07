@@ -265,6 +265,54 @@ FAQ = [
     ("Do you offer refunds?", "We do not issue refunds; instead we offer exchanges and revisions until the deliverable meets the agreed scope. Full details are on our Refund Policy page."),
 ]
 
+# ---------------------------------------------------------------- ICON SECTIONS
+def process_steps(light=False):
+    steps = [("fa-solid fa-cloud-arrow-up", "Upload your drawings", "Send PDF, DWG or BIM files through the quote form. We confirm scope and a fixed fee within 24 hours."),
+             ("fa-solid fa-ruler-combined", "We measure every item", "Estimators take off each trade on screen and mark every quantity on colour-coded plans."),
+             ("fa-solid fa-coins", "Priced at local rates", "Quantities are priced with current supplier and subcontractor rates for your state."),
+             ("fa-solid fa-file-circle-check", "Delivered, audit-ready", "You receive an executive summary, trade breakdown and marked plans in 2 to 5 business days.")]
+    items = "".join(f'<div class="step" data-reveal="up" data-delay="{i*120}"><span class="step__num">{i+1}</span><i class="{ic}"></i><h3>{e(t)}</h3><p>{e(d)}</p></div>' for i, (ic, t, d) in enumerate(steps))
+    return f"""<section class="section{' section--light' if light else ''}" aria-labelledby="process-h">
+  <div class="container">
+    <div class="section-title" data-reveal="up"><h2 id="process-h">How It Works</h2><p>From drawings to a priced, audit-ready estimate in four steps.</p></div>
+    <div class="steps">{items}</div>
+  </div>
+</section>
+"""
+
+def why_us():
+    pts = [("fa-solid fa-bullseye", "Accuracy within 1%", "Typical variance from final construction cost on well-documented projects."),
+           ("fa-solid fa-bolt", "24-hour quotes", "Fixed fee confirmed the next business day; rush takeoffs available."),
+           ("fa-solid fa-highlighter", "Colour-coded plans", "Every quantity traceable to a drawing, so your team can audit the numbers."),
+           ("fa-solid fa-map-location-dot", "Local market rates", "Priced for your state, not national averages.")]
+    items = "".join(f'<li data-reveal="up" data-delay="{i*100}"><i class="{ic}"></i><div><strong>{e(t)}</strong><span>{e(d)}</span></div></li>' for i, (ic, t, d) in enumerate(pts))
+    return f"""<section class="section" aria-labelledby="why-h">
+  <div class="container split">
+    <figure class="split__img" data-reveal="left"><img src="assets/img/photo-estimator-desk.webp" alt="Qestimation estimator reviewing colour-coded floor plans on screen" loading="lazy" width="1344" height="752"><figcaption><i class="fa-solid fa-circle-check"></i> Every takeoff is marked on your drawings</figcaption></figure>
+    <div class="split__text">
+      <span class="eyebrow" data-reveal="up">Why builders choose us</span>
+      <h2 id="why-h" data-reveal="up">Numbers you can take to tender</h2>
+      <p data-reveal="up">Qestimation turns your drawings into priced, trade-by-trade estimates that stand up to scrutiny from clients, quantity surveyors and your own site team.</p>
+      <ul class="why-list">{items}</ul>
+      <a href="services.html" class="btn btn-navy" data-reveal="up">Explore our services</a>
+    </div>
+  </div>
+</section>
+"""
+
+TRADES = [("fa-solid fa-mountain", "Site Work", "site-work"), ("fa-solid fa-cubes", "Concrete", "concrete"), ("fa-solid fa-building", "Masonry", "masonry"), ("fa-solid fa-industry", "Structural Steel", "metal"),
+          ("fa-solid fa-tree", "Framing & Lumber", "lumber"), ("fa-solid fa-layer-group", "Drywall", "drywall"), ("fa-solid fa-table-cells", "Flooring", "flooring"), ("fa-solid fa-paint-roller", "Painting", "painting"),
+          ("fa-solid fa-house-chimney", "Exterior Finishes", "exterior"), ("fa-solid fa-faucet-drip", "Plumbing", "plumbing"), ("fa-solid fa-bolt", "Electrical", "electrical"), ("fa-solid fa-fan", "Mechanical / HVAC", "")]
+def trades_grid():
+    items = "".join(f'<a class="trade" href="work-samples.html{"#" + sid if sid else ""}" data-reveal="zoom" data-delay="{(i%6)*70}"><i class="{ic}"></i><span>{e(t)}</span></a>' for i, (ic, t, sid) in enumerate(TRADES))
+    return f"""<section class="section section--light" aria-labelledby="trades-h">
+  <div class="container">
+    <div class="section-title" data-reveal="up"><h2 id="trades-h">Every Trade, One Estimate</h2><p>We take off and price all construction trades. Click a trade to see a sample estimate.</p></div>
+    <div class="trades">{items}</div>
+  </div>
+</section>
+"""
+
 # ---------------------------------------------------------------- HOME
 def build_home():
     title = "Construction Estimating Services Australia | Qestimation"
@@ -292,9 +340,9 @@ def build_home():
     wk = "".join(f'<a class="work" href="work-samples.html" data-reveal="up" data-delay="{i*140}"><img src="assets/img/{im}" alt="{e(t)} – construction estimate sample by {BRAND}" loading="lazy" width="500" height="500"><div class="work__cap"><h3>{t}</h3><span>{s}</span></div></a>' for i, (im, t, s) in enumerate(works))
     values = [("Summary-Tab.jpg", "Executive Takeoff Summary", "A one-page summary of every quantity and cost so you can review the whole bid in minutes."), ("Color-Coded-Plans.jpg", "Color Coded Marked Plans", "Every item we count is highlighted on your drawings, making audits and site hand-over simple."), ("Existing-Conditions.jpg", "3D Cut/Fill Grading Models", "Earthwork volumes modelled in 3D for accurate cut, fill and site-work pricing.")]
     vals = "".join(f'<div class="value" data-reveal="flip" data-delay="{i*140}"><figure><img src="assets/img/{im}" alt="{e(t)} – {BRAND} value added service" loading="lazy" width="800" height="600"></figure><h3>{e(t)}</h3><p>{e(d)}</p></div>' for i, (im, t, d) in enumerate(values))
-    testis = [("home-testimonial-113165296.jpg", "“Our showroom came in under the budget Qestimation set and the takeoff matched the final order list almost line for line. Never regretted choosing them.”", "Harry Smith", "Director, Fit-out Contractor"),
-              ("home-testimonial-84268399.jpg", "“Your service is very prompt; the day after the site visit we had the design estimate in our inbox. Much appreciated.”", "John Doe", "Project Manager, Residential Developer"),
-              ("home-testimonial-113165296.jpg", "“Colour-coded plans and the executive summary made our tender review painless. We won the bid with a margin we trusted.”", "Sarah Lee", "Estimating Lead, General Contractor")]
+    testis = [("avatar-director.webp", "“Our showroom came in under the budget Qestimation set and the takeoff matched the final order list almost line for line. Never regretted choosing them.”", "Harry Smith", "Director, Fit-out Contractor"),
+              ("avatar-pm.webp", "“Your service is very prompt; the day after the site visit we had the design estimate in our inbox. Much appreciated.”", "John Doe", "Project Manager, Residential Developer"),
+              ("avatar-lead.webp", "“Colour-coded plans and the executive summary made our tender review painless. We won the bid with a margin we trusted.”", "Sarah Lee", "Estimating Lead, General Contractor")]
     ts = "".join(f'<div class="slide{" active" if i == 0 else ""}"><img class="avatar" src="assets/img/{im}" alt="{e(n)}" width="74" height="74" loading="lazy"><blockquote>{q}</blockquote><cite>{e(n)}<small>{e(r)}</small></cite></div>' for i, (im, q, n, r) in enumerate(testis))
     faq = "".join(f'<details{" open" if i == 0 else ""} data-reveal="up" data-delay="{i*60}"><summary>{e(q)}</summary><div class="answer"><p>{e(a)}</p></div></details>' for i, (q, a) in enumerate(FAQ))
     body = f"""<section class="hero" aria-labelledby="hero-h">
@@ -324,6 +372,8 @@ def build_home():
   <div class="container"><div class="counters__grid">{cnt}</div></div>
   <div class="curve-bottom"></div>
 </section>
+{why_us()}
+{process_steps(light=True)}
 <section class="section" aria-labelledby="works-h">
   <div class="container">
     <div class="section-title" data-reveal="up">
@@ -358,6 +408,7 @@ def build_home():
       <h2 id="about-h">About {BRAND}</h2>
       <p><strong>{BRAND}</strong> is an Australian construction estimating service. We prepare quantity takeoffs, bid estimates, budget estimates and on-site cost controls for developers, general contractors, subcontractors and architects, with accuracy typically within 1% of final construction cost.</p>
     </div>
+    <figure class="wide-figure" data-reveal="zoom"><img src="assets/img/photo-site-team.webp" alt="Qestimation estimators reviewing drawings on a construction site" loading="lazy" width="1344" height="752"></figure>
     <div class="facts">
       <div class="fact" data-reveal="up"><strong>What we do</strong>Construction cost estimating, material &amp; quantity takeoffs, budget estimates, cost control.</div>
       <div class="fact" data-reveal="up" data-delay="100"><strong>Who we serve</strong>Developers, general contractors, subcontractors, architects and owner-builders across Australia.</div>
@@ -401,7 +452,8 @@ def build_services():
                          ("cost-controls", "Cost Controls", "On-site cost monitoring, variation tracking and progress claim support during construction.")]:
         ld.append({"@type": "Service", "@id": DOMAIN + "/services.html#" + sid, "name": name, "description": d, "provider": {"@id": DOMAIN + "/#organization"}, "areaServed": "Australia", "serviceType": "Construction estimating", "url": DOMAIN + "/services.html#" + sid})
     body = inner_hero("Construction Estimating Services", "Estimating projects shouldn’t be hard. Our team of seasoned estimators will estimate the cost of your project with a high degree of accuracy. We use a top-of-the-line cost database to calculate the costs on your job based on its location. The accuracy is typically within 1% of final construction costs.", "Services", "services-banner-1.jpg") + band() + f"""
-<section class="section" aria-label="Services detail">
+{process_steps()}
+<section class="section section--light" aria-label="Services detail">
   <div class="container with-sidebar">
     <div>
       <article class="service-row" id="quantity-takeoff">
@@ -459,7 +511,7 @@ def build_services():
     <div class="sidebar" data-reveal="up">{estimator()}</div>
   </div>
 </section>
-""" + cta_block()
+""" + trades_grid() + cta_block()
     return head(title, desc, "/services.html", ld, keywords="quantity takeoff services, construction cost estimating, budget estimating, cost control construction, bid estimate Australia") + header("services.html") + body + footer()
 
 # ---------------------------------------------------------------- WORK SAMPLES
@@ -511,6 +563,11 @@ def build_refund():
     <h2 id="rp-h" data-reveal="up">Refund Policy</h2>
     <p data-reveal="up">We always strive to provide our clients maximum satisfaction and value-for-money services. However, please note that <strong>{BRAND} does not issue refunds. We offer exchanges only</strong> – if a deliverable does not meet the agreed scope we will revise or re-issue it until it does.</p>
     <div class="callout" data-reveal="up"><p><strong>Payment security.</strong> We do not take credit card or payment-related details. None of our staff are allowed or authorised to collect card or payment details from clients. We send an invoice and clients process the payment themselves through the options below.</p></div>
+    <div class="mini-steps" data-reveal="up">
+      <div><i class="fa-solid fa-rotate"></i><strong>Exchanges, not refunds</strong><span>Revised until it meets scope</span></div>
+      <div><i class="fa-solid fa-shield-halved"></i><strong>No card details held</strong><span>You pay the invoice directly</span></div>
+      <div><i class="fa-solid fa-file-signature"></i><strong>Scope agreed in writing</strong><span>Fixed fee before we start</span></div>
+    </div>
     <h2 data-reveal="up">Payment Options</h2>
     <div class="pay-logos" data-reveal="zoom">{pays}</div>
     <h2 id="disclaimer" data-reveal="up" style="margin-top:50px">Service Disclaimer</h2>
@@ -557,6 +614,13 @@ def build_quote():
         <div class="info-box" data-reveal="up" data-delay="120"><i class="fa-solid fa-phone"></i><p><a href="tel:{PHONE_INTL}">{PHONE}</a></p></div>
         <div class="info-box" data-reveal="up" data-delay="240"><i class="fa-solid fa-envelope"></i><p><a href="mailto:{EMAIL}">{EMAIL}</a></p></div>
       </div>
+      <figure class="wide-figure" data-reveal="zoom"><img src="assets/img/photo-contact-office.webp" alt="Qestimation estimator taking a client call" loading="lazy" width="1344" height="752"></figure>
+      <div class="mini-steps" data-reveal="up">
+        <div><i class="fa-solid fa-cloud-arrow-up"></i><strong>1. Upload</strong><span>Drawings &amp; specs</span></div>
+        <div><i class="fa-solid fa-file-invoice-dollar"></i><strong>2. Fixed quote</strong><span>Within 24 hours</span></div>
+        <div><i class="fa-solid fa-ruler-combined"></i><strong>3. Takeoff</strong><span>2–5 business days</span></div>
+        <div><i class="fa-solid fa-circle-check"></i><strong>4. Delivery</strong><span>Audit-ready estimate</span></div>
+      </div>
       <p class="text-center" data-reveal="up">Upload your blueprint &amp; get an absolutely free quotation from our experienced engineers.</p>
       <form id="quote-form" class="form" data-endpoint="{FORM_ENDPOINT}" data-email="{EMAIL}" novalidate data-reveal="up" enctype="multipart/form-data" method="post">
         <div><label for="f-name">Your Name *</label><input id="f-name" name="name" type="text" required autocomplete="name"></div>
@@ -579,7 +643,7 @@ def build_quote():
     return head(title, desc, "/get-quote.html", ld, keywords="free construction estimate quote, construction estimator contact, upload blueprints for estimate") + header("get-quote.html") + body + footer()
 
 # ---------------------------------------------------------------- SHARED CARDS
-POST_IMGS = ["Color-Coded-Plans.jpg", "cost-estimation.jpg", "Summary-Tab.jpg", "qunatity-offs-1.jpg", "sample-1.jpg", "Existing-Conditions.jpg"]
+POST_IMGS = ["blog-takeoff-screen.webp", "blog-cost-desk.webp", "blog-bid-budget.webp", "blog-tender-handshake.webp", "blog-concrete-pour.webp", "blog-video-call.webp"]
 def post_img(a): return POST_IMGS[ARTICLES.index(a) % len(POST_IMGS)]
 def nice_date(d): return datetime.date.fromisoformat(d).strftime("%d %B %Y").lstrip("0")
 def words(a):
@@ -624,6 +688,7 @@ def build_city(c):
 <section class="section" aria-labelledby="city-h">
   <div class="container with-sidebar">
     <div>
+      <figure class="wide-figure" data-reveal="zoom"><img src="assets/img/city-{c['slug']}.webp" alt="{n} skyline with construction cranes – {BRAND} estimating services {n}" loading="lazy" width="1344" height="752"></figure>
       <h2 id="city-h" data-reveal="up" style="text-transform:none">{BRAND} in {n}</h2>
       <p data-reveal="up">{e(c['intro'])}</p>
       <p data-reveal="up">{e(c['market'])}</p>
@@ -720,6 +785,7 @@ def build_article(a):
     <article class="article">
       <div class="article__meta" data-reveal="up"><span><i class="fa-regular fa-calendar"></i>{nice_date(a['date'])}</span><span><i class="fa-regular fa-clock"></i>{max(2, wc//200)} min read</span><span><i class="fa-regular fa-user"></i>{BRAND} Estimating Team</span><span><i class="fa-solid fa-tag"></i>{e(a['keyword'])}</span></div>
       <p class="lead" data-reveal="up">{e(a['summary'])}</p>
+      <figure class="wide-figure" data-reveal="zoom"><img src="assets/img/{post_img(a)}" alt="{e(a['title'])}" width="1344" height="752"></figure>
       <nav class="toc" aria-label="Contents" data-reveal="up"><strong>In this article</strong>{toc}</nav>
       <div data-reveal="up">{body_html}</div>
       <div class="article__cta" data-reveal="up"><div><h3>Need this done for your project?</h3><p>Upload your drawings and get a fixed-price estimating quote within 24 hours.</p></div><a href="get-quote.html" class="btn btn-primary">Get a free quote</a></div>
